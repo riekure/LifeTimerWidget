@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">LifeTimerWidget</string>
+    <string name="widget_description">Shows remaining time in your life.</string>
+</resources>
