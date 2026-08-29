@@ -30,18 +30,38 @@ class MainActivity : ComponentActivity() {
         
         setContent {
             MaterialTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    LifeTimerScreen(repository) {
-                        val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
-                        scope.launch {
-                            LifeTimerWidget().updateAll(this@MainActivity)
-                        }
+                LifeTimerApp(repository) {
+                    val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
+                    scope.launch {
+                        LifeTimerWidget().updateAll(this@MainActivity)
                     }
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LifeTimerApp(repository: LifeTimerRepository, onDataChanged: () -> Unit) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Life Timer") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            )
+        }
+    ) { innerPadding ->
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            LifeTimerScreen(repository, onDataChanged)
         }
     }
 }
@@ -79,31 +99,46 @@ fun LifeTimerScreen(repository: LifeTimerRepository, onDataChanged: () -> Unit) 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = "残り寿命",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-        
-        if (remainingLife != null) {
-            if (remainingLife.isExpired) {
-                Text(text = "寿命を迎えました", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            } else {
-                Text(text = "${remainingLife.years} 年", fontSize = 32.sp, fontWeight = FontWeight.Bold)
-                Text(text = "${remainingLife.days} 日", fontSize = 32.sp, fontWeight = FontWeight.Bold)
-                Text(text = "${remainingLife.hours} 時間", fontSize = 32.sp, fontWeight = FontWeight.Bold)
-                Text(text = "${remainingLife.minutes} 分", fontSize = 32.sp, fontWeight = FontWeight.Bold)
-                Text(text = "${remainingLife.seconds} 秒", fontSize = 32.sp, fontWeight = FontWeight.Bold)
+        ElevatedCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 32.dp),
+            colors = CardDefaults.elevatedCardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            ),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "残り寿命",
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                if (remainingLife != null) {
+                    if (remainingLife.isExpired) {
+                        Text(text = "寿命を迎えました", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    } else {
+                        Text(text = "${remainingLife.years} 年", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text(text = "${remainingLife.days} 日", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text(text = "${remainingLife.hours} 時間", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text(text = "${remainingLife.minutes} 分", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text(text = "${remainingLife.seconds} 秒", fontSize = 36.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    }
+                } else {
+                    Text(text = inputError, color = MaterialTheme.colorScheme.error)
+                }
             }
-        } else {
-            Text(text = inputError, color = MaterialTheme.colorScheme.error)
         }
-
-        Spacer(modifier = Modifier.height(32.dp))
         
         OutlinedTextField(
             value = birthDateString,
@@ -116,7 +151,8 @@ fun LifeTimerScreen(repository: LifeTimerRepository, onDataChanged: () -> Unit) 
             },
             label = { Text("生年月日 (YYYY-MM-DD)") },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium
         )
         
         Spacer(modifier = Modifier.height(16.dp))
@@ -136,14 +172,22 @@ fun LifeTimerScreen(repository: LifeTimerRepository, onDataChanged: () -> Unit) 
             label = { Text("想定寿命 (歳)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium
         )
         
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "※ホーム画面のウィジェットはバッテリー保護のため毎秒更新されません。最新の秒数を確認するにはウィジェットの更新ボタンを押してください。",
-            fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Surface(
+            color = MaterialTheme.colorScheme.secondaryContainer,
+            shape = MaterialTheme.shapes.small
+        ) {
+            Text(
+                text = "※ホーム画面のウィジェットはバッテリー保護のため毎秒更新されません。最新の秒数を確認するにはウィジェットの更新ボタンを押してください。",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.padding(12.dp)
+            )
+        }
     }
 }
